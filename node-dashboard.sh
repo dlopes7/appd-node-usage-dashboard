@@ -2,13 +2,13 @@
 #set -x 
 
 APPD_CONTROLLER=http://demo.controller.com
-APPD_USER=user 
+APPD_USER=user
 APPD_ACCOUNT=customer1
 APPD_PASSWORD=password
 
-METRIC_HISTORY_MINUTES=60
+METRIC_HISTORY_MINUTES=1440
 
-STARTING_CHARACTERS_IN_HTML=177
+STARTING_CHARACTERS_IN_HTML=300
 
 WIDGETS_PER_LINE=6
 
@@ -86,13 +86,13 @@ for ((i=0;i<${#app_ids[@]};++i)); do
         number_of_characters=$((number_of_characters + ${#table_row}))
 
         # A label widget can have only 1024 characters
-        if [ "$number_of_characters" -gt 1024 ]; then
+        if [ "$number_of_characters" -ge 1024 ]; then
 
-            number_of_wigets=$((number_of_wigets + 1))
-            generate_widget "$table_rows" "$app_name" "$number_of_wigets" "$x" "$y"
-            
-
-            x=$((x + 2))
+            if [ -n "$table_rows" ]; then
+                number_of_wigets=$((number_of_wigets + 1))
+                generate_widget "$table_rows" "$app_name" "$number_of_wigets" "$x" "$y"
+                x=$((x + 2))
+            fi
 
             if [ "$x" -gt 6 ]; then
                 x=0
@@ -111,15 +111,12 @@ for ((i=0;i<${#app_ids[@]};++i)); do
     if [ -n "$table_rows" ]; then
         number_of_wigets=$((number_of_wigets + 1))
         generate_widget "$table_rows" "$app_name" "$number_of_wigets" "$x" "$y"
+        x=$((x + 2))
     fi
-    x=$((x + 2))
+    
     if [ "$x" -gt 6 ]; then
         x=0
         y=$((y + 1))
-    fi
-
-    if [ "$number_of_wigets" -gt 102 ]; then
-        break
     fi
     
 done
