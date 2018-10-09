@@ -8,6 +8,8 @@ APPD_PASSWORD=password
 
 METRIC_HISTORY_MINUTES=1440
 
+METRIC_HISTORY_MINUTES=60
+
 STARTING_CHARACTERS_IN_HTML=300
 
 WIDGETS_PER_LINE=6
@@ -35,9 +37,9 @@ rest_ui(){
     curl -s --user $APPD_USER@$APPD_ACCOUNT:$APPD_PASSWORD \
     -H "accept: application/json, text/plain, */*" \
     -H "X-CSRF-TOKEN: $(grep X-CSRF-TOKEN cookies.jar | awk '{print $7}')" \
-    -H "Content-Type: application/json" \
+    -H "Content-Type: application/json;charset=utf-8" \
     --cookie cookies.jar \
-    $APPD_CONTROLLER"$1" "$@"
+    $APPD_CONTROLLER"$1" "${@:2}"
 
 }
 
@@ -134,3 +136,8 @@ printf "Creating dashboard/dashboard.json\n"
 cat dashboard/dashboard_01.json > dashboard/dashboard.json
 cat widgets.json >> dashboard/dashboard.json
 cat dashboard/dashboard_02.json >> dashboard/dashboard.json
+cat widgets.json >> dashboard/dashboard.json
+cat dashboard/dashboard_02.json >> dashboard/dashboard.json
+
+
+rest_ui "/restui/dashboards/updateDashboard" "-d" "@dashboard/dashboard.json"
