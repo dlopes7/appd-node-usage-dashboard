@@ -26,7 +26,7 @@ case "${unameOut}" in
 esac
 
 rest(){
-    curl -s -i --user $APPD_USER@$APPD_ACCOUNT:$APPD_PASSWORD \
+    curl -s --user $APPD_USER@$APPD_ACCOUNT:$APPD_PASSWORD \
     -H "accept: application/json, text/plain, */*" \
     -H "Content-Type: application/json" \
     $APPD_CONTROLLER"$1"
