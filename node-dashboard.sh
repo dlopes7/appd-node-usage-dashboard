@@ -6,7 +6,7 @@ APPD_USER=user
 APPD_ACCOUNT=customer1
 APPD_PASSWORD=password
 
-
+METRIC_HISTORY_MINUTES=1440
 METRIC_HISTORY_MINUTES=60
 STARTING_CHARACTERS_IN_HTML=340
 WIDGETS_PER_LINE=6
@@ -34,14 +34,14 @@ rest(){
 
 rest_ui(){
 
-    curl -s --user $APPD_USER2@$APPD_ACCOUNT2:$APPD_PASSWORD2 --cookie-jar cookies.jar $APPD_CONTROLLER2/auth?action=login
+    curl -s --user $APPD_USER@$APPD_ACCOUNT:$APPD_PASSWORD --cookie-jar cookies.jar $APPD_CONTROLLER/auth?action=login
 
-    curl -s --user $APPD_USER2@$APPD_ACCOUNT2:$APPD_PASSWORD2 \
+    curl -s --user $APPD_USER@$APPD_ACCOUNT:$APPD_PASSWORD \
     -H "accept: application/json, text/plain, */*" \
     -H "X-CSRF-TOKEN: $(grep X-CSRF-TOKEN cookies.jar | awk '{print $7}')" \
     -H "Content-Type: application/json;charset=utf-8" \
     --cookie cookies.jar \
-    $APPD_CONTROLLER2"$1" "${@:2}"
+    $APPD_CONTROLLER"$1" "${@:2}"
 
 }
 
