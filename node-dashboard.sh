@@ -6,12 +6,9 @@ APPD_USER=user
 APPD_ACCOUNT=customer1
 APPD_PASSWORD=password
 
-METRIC_HISTORY_MINUTES=1440
 
 METRIC_HISTORY_MINUTES=60
-
-STARTING_CHARACTERS_IN_HTML=300
-
+STARTING_CHARACTERS_IN_HTML=340
 WIDGETS_PER_LINE=6
 
 # Source the template
@@ -21,7 +18,12 @@ WIDGETS_PER_LINE=6
 mkdir -p widgets
 rm -f widgets/*
 
-
+# Grep changes depending on the OS
+unameOut="$(uname -s)"
+case "${unameOut}" in
+    Linux*)     grep_form="grep -oP";;
+    Darwin*)    grep_form="grep -e";;
+esac
 
 rest(){
     curl -s -i --user $APPD_USER@$APPD_ACCOUNT:$APPD_PASSWORD \
@@ -32,21 +34,21 @@ rest(){
 
 rest_ui(){
 
-    curl -s --user $APPD_USER@$APPD_ACCOUNT:$APPD_PASSWORD --cookie-jar cookies.jar $APPD_CONTROLLER/auth?action=login
+    curl -s --user $APPD_USER2@$APPD_ACCOUNT2:$APPD_PASSWORD2 --cookie-jar cookies.jar $APPD_CONTROLLER2/auth?action=login
 
-    curl -s --user $APPD_USER@$APPD_ACCOUNT:$APPD_PASSWORD \
+    curl -s --user $APPD_USER2@$APPD_ACCOUNT2:$APPD_PASSWORD2 \
     -H "accept: application/json, text/plain, */*" \
     -H "X-CSRF-TOKEN: $(grep X-CSRF-TOKEN cookies.jar | awk '{print $7}')" \
     -H "Content-Type: application/json;charset=utf-8" \
     --cookie cookies.jar \
-    $APPD_CONTROLLER"$1" "${@:2}"
+    $APPD_CONTROLLER2"$1" "${@:2}"
 
 }
 
 # Grab all apps
 apps=$(rest "/controller/rest/applications?output=json")
-app_ids=($(grep -oP '"id": \K([0-9]+)' <<< $apps))
-app_names=($(grep -oP '"name": "\K.+(?=")' <<< $apps))
+app_ids=($($grep_form  '"id": \K([0-9]+)' <<< $apps))
+app_names=($($grep_form  '"name": "\K.*?(?=")' <<< $apps))
 
 
 # For each app, grab the Calls per Minute, for each node of every tier
@@ -62,12 +64,11 @@ for ((i=0;i<${#app_ids[@]};++i)); do
 
     app_id="${app_ids[i]}"
     app_name="${app_names[i]}"
-
     metrics=$(rest "/controller/rest/applications/$app_id/metric-data?output=json&metric-path=$metric_path&time-range-type=BEFORE_NOW&duration-in-mins=$METRIC_HISTORY_MINUTES")    
     
     #tiers=$(grep -oP 'Overall Application Performance\|\K.*?(?=\|)' <<< $metrics)
-    nodes=($(grep -oP 'Individual Nodes\|\K.*?(?=\|)' <<< $metrics))
-    sums=($(grep -oP 'sum": \K.*?(?=,)' <<< $metrics))
+    nodes=($($grep_form  'Individual Nodes\|\K.*?(?=\|)' <<< $metrics))
+    sums=($($grep_form  'sum": \K.*?(?=,)' <<< $metrics))
 
     # Merge the array "nodes" with the array "sums"
     k=0
@@ -77,16 +78,20 @@ for ((i=0;i<${#app_ids[@]};++i)); do
     declare c 
 
     # Sort the array decreasing by sum
-    readarray -t sorted <<< $(for a in "${c[@]}"; do echo "$a"; done | sort -t'|' -nr -k2)
-    
+    IFS=$'\n' sorted=($(sort -t'|' -nr -k2 <<<"${c[*]}"))
+    unset IFS
+
     table_rows=""
-    for element in "${sorted[@]}"; do
-        
+
+    number_of_characters=$(($number_of_characters + ${#app_name}))
+    for ((l=0;l<${#sorted[@]};++l)); do
+        element="${sorted[l]}"
         element=$(sed 's,|,</font></td><td><font color=\\"#383\\">,g' <<< $element)
 
         printf -v table_row '<tr><td><font color=\\"#338\\">%s</font></td></tr>' "${element}"
-        number_of_characters=$((number_of_characters + ${#table_row}))
 
+        number_of_characters=$(($number_of_characters + ${#table_row} ))
+        #printf '\n%d = %s - %d\n' "$l" "$app_name" "$number_of_characters"
         # A label widget can have only 1024 characters
         if [ "$number_of_characters" -ge 1024 ]; then
 
@@ -102,7 +107,7 @@ for ((i=0;i<${#app_ids[@]};++i)); do
             fi
 
 
-            number_of_characters=$STARTING_CHARACTERS_IN_HTML
+            number_of_characters=$(($STARTING_CHARACTERS_IN_HTML + ${#app_name}))
             table_rows=""
 
         fi
@@ -119,8 +124,7 @@ for ((i=0;i<${#app_ids[@]};++i)); do
     if [ "$x" -gt 6 ]; then
         x=0
         y=$((y + 1))
-    fi
-    
+    fi    
 done
 
 # Remove the comma from the last widget

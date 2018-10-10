@@ -9,11 +9,22 @@ x="$4"
 y="$5"
 
 printf -v file_name "widgets/widget_%05d.json" "$widget_number" 
-printf "Creating %s %s %s \n" "$file_name"
+
+table_text="<table style=\\\"width:100%\\\"><tr><th bgcolor=\\\"#5D7B9D\\\"><font color=\\\"#fff\\\">$app_name</font></th><th bgcolor=\\\"#5D7B9D\\\"><font color=\\\"#fff\\\">Calls</font></th></tr>$html_table</table>"
+table_text="${table_text:0:1024}"
+#i=$(( ${#table_text} - 1))
+#last_char="${table_text:$i:1}"
+
+#if [ "$last_char" == "\\" ]; then 
+#    table_text="${table_text:0:1023}"
+#fi
+
+printf "Creating %s with %d characters for app %s\n" "$file_name" "${#table_text}" "${app_name}"
 
 cat  << EOF > $file_name
 {
-            "widgetType": "TextWidget",
+            "type": "LABEL",
+            "guid": "$(uuidgen)",
             "title": null,
             "height": 1,
             "width": 2,
@@ -28,7 +39,6 @@ cat  << EOF > $file_name
             "drillDownActionType": null,
             "backgroundColor": 16777215,
             "backgroundColors": null,
-            "backgroundColorsStr": "16777215,16777215",
             "color": 1646891,
             "fontSize": 12,
             "useAutomaticFontSize": false,
@@ -50,9 +60,7 @@ cat  << EOF > $file_name
             "endTime": null,
             "minutesBeforeAnchorTime": 15,
             "isGlobal": true,
-            "propertiesMap": null,
-            "dataSeriesTemplates": null,
-            "text": "<table style=\"width:100%\"><tr><th bgcolor=\"#5D7B9D\"><font color=\"#fff\">$app_name</font></th><th bgcolor=\"#5D7B9D\"><font color=\"#fff\">Calls</font></th></tr>$html_table</table>",
+            "text": "$table_text",
             "textAlign": "LEFT",
             "margin": 4
         },
